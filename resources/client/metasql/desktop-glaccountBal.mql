@@ -24,7 +24,7 @@ JOIN (SELECT period_id
       FROM period
       JOIN yearperiod ON (period_yearperiod_id=yearperiod_id)
       WHERE (period_end >= current_date)
-      ORDER BY yearperiod_end desc, period_number asc
+      ORDER BY yearperiod_end asc, period_number asc
       LIMIT 1) data
   ON (trialbal_period_id=period_id)
 WHERE (accnt_id IN (<? literal("accnt_id_list") ?>))
