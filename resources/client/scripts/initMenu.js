@@ -84,8 +84,21 @@ _vToolBar.toolButtonStyle = Qt.ToolButtonTextUnderIcon;
 // Initialize Desktop
 // Set up browser for home Page
 var _welcome = new QWebView(mainwindow);
-var url = new QUrl(metrics.value("desktop/welcome"));
+var firstURL = metrics.value("desktop/welcome");
+var databaseURL = mainwindow.databaseURL();
+var string =  databaseURL.split("/");
+var databaseName = string[3];
+var hostName = string[2].substring(0, string[2].indexOf(":"))
+var serverVersion = metrics.value("ServerVersion");
+var application = metrics.value("Application");
+var secondURL = firstURL + 
+"?client=desktop" + 
+"&hostname=" + hostName +  
+"&organization=" + databaseName +
+"&edition=" + application + 
+"&version=" + serverVersion;
 _welcome.objectName = "_welcome";
+var url = new QUrl(secondURL);
 _welcome["loadFinished(bool)"].connect(loadLocalHtml);
 _welcome["linkClicked(const QUrl &)"].connect(openUrl);
 _welcome.load(url);
