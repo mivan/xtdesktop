@@ -11,7 +11,12 @@ SELECT usr_id, usr_username, usr_propername, usr_email,
        client_addr, '0' AS cnt_internal_xttotalrole, '0' AS cnt_external_xttotalrole
   FROM pg_stat_activity
   JOIN usr ON (usr_id=usesysid)
+  -- Incident #21852 
+  <? if literal(select compareversion('9.2.0') <= 0) ?>
   LEFT OUTER JOIN pg_locks ON (database=datid AND classid=datid AND objid=procpid AND objsubid=2)
+  <? else ?>
+  LEFT OUTER JOIN pg_locks ON (database=datid AND classid=datid AND objid=pg_stat_activity.pid AND objsubid=2)
+  <? endif ?>
  WHERE(datname=current_database())
  GROUP BY usr_id, usr_username, usr_propername, usr_email,
           client_addr, cnt_internal_xttotalrole, cnt_external_xttotalrole;
