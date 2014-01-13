@@ -1,0 +1,22 @@
+Release Notes
+xTuple Desktop (xtDesktop)
+Version 3.8.4
+January 13, 2014
+==================================
+
+This is the release of the 3.8.4 xTuple Desktop package,
+a free and open source extension package for xTuple ERP (PostBooks, 
+Standard, and Manufacturing Editions). 
+
+xtDesktop is available under the same Common Public Attribution 
+License (CPAL) as the PostBooks Edition of xTuple ERP 
+(www.xtuple.com/CPAL). For more information on xTuple's extension 
+package architecture, please see www.xtuple.org/developer-zone.
+
+==================================
+
+Bug fixes:
+
+* Copyright date updated
+* Add user, client and db params to welcome page URL [22267]
+* Add support for PostgreSQL 9.3 [21852]
