@@ -202,10 +202,10 @@ This package is an extension for xTuple ERP: PostBooks Edition, a free and open 
   <loadmetasql file="client/metasql/desktop-userOnline.mql" />
   
   <createfunction file="database/functions/fetchwelcomehtml.sql"    name="fetchwelcomehtml" />
-  <createfunction file="resources/database/functions/usersonline.sql" name="usersonline" />
+  <createfunction file="database/functions/usersonline.sql" name="usersonline" />
   <finalscript file="database/misc/setMetrics.sql"  />
   <finalscript file="database/misc/grantPrivileges.sql"  />
-  <script file="resources/database/misc/usersonline-type.sql" />
+  <script file="database/misc/usersonline-type.sql" />
 
   <loadimage      file="client/images/ImgUpArrow.png" name="ImgUpArrow" />
   <loadimage      file="client/images/ImgRightArrow.png" name="ImgRightArrow" />
