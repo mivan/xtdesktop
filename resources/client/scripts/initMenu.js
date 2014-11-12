@@ -91,11 +91,11 @@ var databaseName = string[3];
 var hostName = string[2].substring(0, string[2].indexOf(":"))
 var serverVersion = metrics.value("ServerVersion");
 var application = metrics.value("Application");
-var secondURL = firstURL + 
-"?client=desktop" + 
-"&hostname=" + hostName +  
+var secondURL = firstURL +
+"?client=desktop" +
+"&hostname=" + hostName +
 "&organization=" + databaseName +
-"&edition=" + application + 
+"&edition=" + application +
 "&version=" + serverVersion;
 _welcome.objectName = "_welcome";
 var url = new QUrl(secondURL);
@@ -143,6 +143,10 @@ var maintWin = addDesktop("desktopMaintenance", "gear_32", "ViewMaintenanceDeskt
 initDockExtensions();
 //initDockUserOnline();
 
+addToolBarAction("Dashboards", "xtuple-dashboard_48", true);
+var dashboardAction = _vToolBarActions[_vToolBarActions.length-1];
+dashboardAction.triggered.connect(openDashboard);
+
 // Hack to fix icon size problem until next core release
 var maintToolbar = maintWin.findChild("_toolbar");
 _vToolBar.iconSize = maintToolbar.iconSize;
@@ -167,8 +171,8 @@ else
 
 /*!
   Adds screen with name of @a uiName to the desktop stack so long as the user has
-  been granted the privilege @a privName. The @a windowTitle of the UI object is 
-  added to the Desktop Dock so that when it is clicked, the associated window is 
+  been granted the privilege @a privName. The @a windowTitle of the UI object is
+  added to the Desktop Dock so that when it is clicked, the associated window is
   selected on the Desktop.
 */
 function addDesktop(uiName, imageName, privilege)
@@ -195,10 +199,14 @@ function addToolBarAction(label, imageName, privilege)
   // Create the action (add to menu not seen to ensure priv rescans work)
   var act = _menuToolBar.addAction(icn, label);
   act.checkable = true;
-  if (privilege)
+  if (typeof privilege === 'string')
   {
     act.setEnabled(privileges.check(privilege));
     act.setData(privilege);
+  }
+  else if (privilege !== undefined)
+  {
+    act.setEnabled(privilege);
   }
 
   // Add to toolbar
@@ -306,5 +314,14 @@ function currencyConversions()
 {
   openSetup("currencyConversions");
 }
+
+function openDashboard()
+{
+  //intended https://host/dev/app#list/dashboard-lite
+  var link = 'https://'+hostName+':8443/'+databaseName+'/app#list/dashboard-lite';
+  openUrl(link);
+
+}
+
 
 
