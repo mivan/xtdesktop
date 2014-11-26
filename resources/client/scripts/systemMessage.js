@@ -18,5 +18,5 @@ function sendReply()
   var newwnd = toolbox.openWindow("sendMessageToUser", mywindow, Qt.ApplicationModal, Qt.Dialog);
   toolbox.lastWindow().set(params);
   newwnd.exec();
-  mydialog.accept();
+  mydialog.sClose();
 }
