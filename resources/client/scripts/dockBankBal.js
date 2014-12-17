@@ -65,7 +65,11 @@ function fillListBankBal()
 
   if (_dockBankBal.visible && _bankBalIsDirty)
   {
-    _bankBal.populate(toolbox.executeDbQuery("desktop","bankBal"));
+    var params = new Object;
+    if (metrics.boolean("EnableProjectAccounting"))
+      params.projectAccounting = true;
+    var qry = toolbox.executeDbQuery("desktop","bankBal", params);
+    _bankBal.populate(qry);
     _bankBalIsDirty = false;
   }
 }
