@@ -10,10 +10,12 @@ FROM bankaccnt
 WHERE (NOT fetchmetricbool('ManualForwardUpdate'));
 
 -- Return results
-SELECT bankaccnt_id, bankaccnt_name, trialbal_ending * -1 AS balance,
+SELECT bankaccnt_id, bankaccnt_name, SUM(balance) AS balance,
   'curr' AS balance_xtnumericrole
-FROM bankaccnt
- JOIN accnt ON (bankaccnt_accnt_id=accnt_id)
+FROM (
+SELECT bankaccnt_id, bankaccnt_name, COALESCE(trialbal_ending * -1, 0.0) AS balance
+FROM accnt
+ JOIN bankaccnt ON (bankaccnt_accnt_id=accnt_id)
  JOIN trialbal ON (accnt_id=trialbal_accnt_id)
  JOIN (SELECT period_id
        FROM period
@@ -23,4 +25,22 @@ FROM bankaccnt
        ORDER BY yearperiod_end desc, period_number desc
        LIMIT 1) data
    ON (trialbal_period_id=period_id)
+<? if exists("projectAccounting") ?>
+UNION ALL
+SELECT bankaccnt_id, bankaccnt_name, COALESCE(trialbal_ending * -1, 0.0) AS balance
+FROM xtprjaccnt.prjaccnt p
+ JOIN ONLY accnt a ON (a.accnt_id=p.prjaccnt_accnt_id)
+ JOIN bankaccnt ON (bankaccnt_accnt_id=a.accnt_id)
+ JOIN trialbal ON (p.accnt_id=trialbal_accnt_id)
+ JOIN (SELECT period_id
+       FROM period
+       JOIN yearperiod ON (period_yearperiod_id=yearperiod_id)
+       JOIN trialbal ON (trialbal_period_id=period_id)
+       WHERE (period_start <= current_date)
+       ORDER BY yearperiod_end desc, period_number desc
+       LIMIT 1) data
+   ON (trialbal_period_id=period_id)
+<? endif ?>
+) AS accntdata
+GROUP BY bankaccnt_id, bankaccnt_name
 ORDER BY bankaccnt_name;
