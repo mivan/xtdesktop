@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2014 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -29,6 +29,12 @@ include("dockSalesHistory");
 include("dockSalesOpen");
 include("dockSendMessage");
 include("dockUserOnline");
+include("desktopMenuBar");
+
+// ================================================
+// Desktop Stylesheet can be maintained from here 
+var _globalStyle = 'font: 75 bold 10pt "Verdana";\ncolor: rgb(138, 138, 138);\nselection-color: rgb(36, 146, 222);\nbackground-color: rgb(255, 255, 255);';
+// ================================================
 
 var _desktopStack;
 var _open = qsTr("Open...");
@@ -37,8 +43,13 @@ var _leftAreaDocks = new Array();
 var _bottomAreaDocks = new Array();
 var _windows = new Array();
 var _hasSavedState = settingsValue("hasSavedState").length > 0;
-var _vToolBar;
+var _vToolBar = new Object;
 var _vToolBarActions = new Array();
+
+var _mainMenu;
+var _shortcuts;
+var _employeeImage;
+var _employee;
 
 var _menuDesktop = new QMenu(qsTr("Desktop"),mainwindow);
 var _menuToolBar = new QMenu(mainwindow);
@@ -57,7 +68,14 @@ _dtTimer.setInterval(metrics.value("desktop/timer"));
 _dtTimer.start();
 
 // Set the desktop
+_desktopWidget = toolbox.createWidget("QWidget", mainwindow, "_desktopWidget");
+_desktopLayout = toolbox.createLayout("QHBoxLayout", mainwindow, "_desktopLayout");
+_desktopMenu = toolbox.loadUi("desktopMenuBar", mainwindow);
+_desktopMenu.maximumWidth = 200;
 _desktopStack = toolbox.createWidget("QStackedWidget", mainwindow, "_desktopStack");
+_desktopLayout.addWidget(_desktopMenu);
+_desktopLayout.addWidget(_desktopStack);
+_desktopWidget.setLayout(_desktopLayout);
 var _desktopParent;
 
 // if this handleNewWindow overload exists then GUIClient is a QMdiArea
@@ -69,20 +87,25 @@ if (mainwindow.showTopLevel())
 
 if (_desktopParent)
 {
-_desktopParent.setCentralWidget(_desktopStack);
+//_desktopParent.setCentralWidget(_desktopStack);
+_desktopParent.setCentralWidget(_desktopWidget);
 _vToolBar = new QToolBar(_desktopParent);
 _desktopParent.addToolBar(Qt.LeftToolBarArea, _vToolBar);
+
+// Initialise Menu Bar items
+setupDesktopMenu();
 
 // Intialize the left toolbar
 _vToolBar.objectName = "_vToolBar";
 _vToolBar.windowTitle = "Desktop Toolbar";
 _vToolBar.floatable = false;
 _vToolBar.movable = false;
-_vToolBar.visible = true;
-_vToolBar.toolButtonStyle = Qt.ToolButtonTextUnderIcon;
+//_vToolBar.visible = true;
+_vToolBar.visible = false;
+_vToolBar.toolButtonStyle = Qt.ToolButtonTextOnly;
 
 // Initialize Desktop
-// Set up browser for home Page
+// Set up browser for Welcome Page
 var _welcome = new QWebView(mainwindow);
 var firstURL = metrics.value("desktop/welcome");
 var databaseURL = mainwindow.databaseURL();
@@ -91,11 +114,11 @@ var databaseName = string[3];
 var hostName = string[2].substring(0, string[2].indexOf(":"))
 var serverVersion = metrics.value("ServerVersion");
 var application = metrics.value("Application");
-var secondURL = firstURL +
-"?client=desktop" +
-"&hostname=" + hostName +
+var secondURL = firstURL + 
+"?client=desktop" + 
+"&hostname=" + hostName +  
 "&organization=" + databaseName +
-"&edition=" + application +
+"&edition=" + application + 
 "&version=" + serverVersion;
 _welcome.objectName = "_welcome";
 var url = new QUrl(secondURL);
@@ -106,6 +129,16 @@ _welcome.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;
 _desktopStack.addWidget(_welcome);
 addToolBarAction(qsTr("Welcome"), "home_32");
 _vToolBarActions[0].checked = true;
+
+// Set up browser for Home Page / Dashboard
+var _home =  new QWebView(mainwindow);
+var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappHostname") + "/" + metrics.value("desktop/dashboard");  // Dashboard Url metric
+_home["loadFinished(bool)"].connect(loadLocalHtml);
+_home["linkClicked(const QUrl &)"].connect(openUrl);
+_home.load(new QUrl(homeURL));
+_home.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;
+_desktopStack.addWidget(_home);
+addToolBarAction(qsTr("Dashboard"), "home_32");
 
 // Initialize additional desktop UIs and Dock Widgets
 // (Init functions come from the code pulled in by the include statements)
@@ -118,6 +151,7 @@ addDesktop("desktopSales", "reward_32", "ViewSalesDesktop");
 initDockSalesAct();
 initDockSalesHist();
 initDockSalesOpen();
+
 addDesktop("desktopAccounting", "accounting_32", "ViewAccountingDesktop");
 initDockPayables();
 initDockReceivables();
@@ -143,10 +177,6 @@ var maintWin = addDesktop("desktopMaintenance", "gear_32", "ViewMaintenanceDeskt
 initDockExtensions();
 //initDockUserOnline();
 
-addToolBarAction("Dashboards", "xtuple-dashboard_48", true);
-var dashboardAction = _vToolBarActions[_vToolBarActions.length-1];
-dashboardAction.triggered.connect(openDashboard);
-
 // Hack to fix icon size problem until next core release
 var maintToolbar = maintWin.findChild("_toolbar");
 _vToolBar.iconSize = maintToolbar.iconSize;
@@ -171,19 +201,20 @@ else
 
 /*!
   Adds screen with name of @a uiName to the desktop stack so long as the user has
-  been granted the privilege @a privName. The @a windowTitle of the UI object is
-  added to the Desktop Dock so that when it is clicked, the associated window is
+  been granted the privilege @a privName. The @a windowTitle of the UI object is 
+  added to the Desktop Dock so that when it is clicked, the associated window is 
   selected on the Desktop.
 */
 function addDesktop(uiName, imageName, privilege)
 {
   // Get the UI and add to desktop stack
   var desktop = toolbox.loadUi(uiName);
+  desktop.setStyleSheet(_globalStyle);
   _desktopStack.addWidget(desktop);
   _windows[_windows.length] = desktop;
   addToolBarAction(desktop.windowTitle, imageName, privilege);
   desktop.restoreState();
-
+  
   return desktop;
 }
 
@@ -199,20 +230,20 @@ function addToolBarAction(label, imageName, privilege)
   // Create the action (add to menu not seen to ensure priv rescans work)
   var act = _menuToolBar.addAction(icn, label);
   act.checkable = true;
-  if (typeof privilege === 'string')
+  if (privilege)
   {
     act.setEnabled(privileges.check(privilege));
     act.setData(privilege);
-  }
-  else if (privilege !== undefined)
-  {
-    act.setEnabled(privilege);
   }
 
   // Add to toolbar
   _vToolBar.addAction(act);
   _vToolBarActions[_vToolBarActions.length] = act;
   _vToolBar["actionTriggered(QAction*)"].connect(toolbarActionTriggered);
+
+  // Add to the Menu list if user has privileges
+  if (!privilege || privileges.check(privilege))
+    var menuItem = new XTreeWidgetItem(_mainMenu, _vToolBarActions.length, _vToolBarActions.length, qsTr(label));
 }
 
 /*!
@@ -314,14 +345,3 @@ function currencyConversions()
 {
   openSetup("currencyConversions");
 }
-
-function openDashboard()
-{
-  //intended https://host/dev/app#list/dashboard-lite
-  var link = 'https://'+hostName+':8443/'+databaseName+'/app#list/dashboard-lite';
-  openUrl(link);
-
-}
-
-
-

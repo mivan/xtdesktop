@@ -1,4 +1,4 @@
--- Copyright (c) 1999-2014 by OpenMFG LLC, d/b/a xTuple. 
+-- Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple. 
 -- See www.xtuple.com/CPAL for the full text of the software license.
 CREATE TYPE xtdesktop.usersonline AS
    (usr_id integer,
