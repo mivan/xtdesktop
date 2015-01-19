@@ -132,7 +132,7 @@ _vToolBarActions[0].checked = true;
 
 // Set up browser for Home Page / Dashboard
 var _home =  new QWebView(mainwindow);
-var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappHostname") +
+var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappPort") +
                "/" + metrics.value("desktop/dashboard");  // Dashboard Url metric
 _home["loadFinished(bool)"].connect(loadLocalHtml);
 _home["linkClicked(const QUrl &)"].connect(openUrl);
