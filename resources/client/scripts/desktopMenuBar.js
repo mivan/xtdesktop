@@ -25,15 +25,18 @@ function setupDesktopMenu() {
   _shortcutMenu.addColumn(qsTr("SHORTCUTS"), -1, Qt.AlignLeft, true, "menuShortcuts");
   var _sc = toolbox.executeDbQuery("desktop", "userShortcuts", new Object);
 
-// Populate shortcuts menu per Teeview item so it matches Main Menu visually
+// Populate shortcuts menu per Treeview item so it matches Main Menu visually
   while(_sc.next()) {
     var menuItem = new XTreeWidgetItem(_shortcutMenu, _sc.value("usrpref_id"), _sc.value("usrpref_id"), _sc.value("menuShortcuts"));
   }
 
-  var _sqlImage = "SELECT crmacct_name, crmacct_usr_username, emp.emp_image_id "
-              + "  FROM emp JOIN crmacct ON (emp_id=crmacct_emp_id) "
-              + "  WHERE crmacct_usr_username = geteffectivextuser();";
-  var _employeeData = toolbox.executeQuery(_sqlImage);
+  var _employeeSql = "SELECT 0 as sort, crmacct_name, crmacct_usr_username, emp.emp_image_id "
+                + "FROM emp JOIN crmacct ON (emp_id=crmacct_emp_id) "
+                + "WHERE crmacct_usr_username = geteffectivextuser() "
+                + "UNION SELECT 1 as sort, geteffectivextuser(), usr_propername, null "
+                + "FROM usr WHERE usr_username = geteffectivextuser() "
+                + "ORDER BY 1 ASC LIMIT 1;       ";
+  var _employeeData = toolbox.executeQuery(_employeeSql);
   if (_employeeData.first()){
     _employeeImage.setId(_employeeData.value("emp_image_id"));
     _employee.text = _employeeData.value("crmacct_name");

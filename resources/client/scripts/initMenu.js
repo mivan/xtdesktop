@@ -67,7 +67,7 @@ _dtTimer = new QTimer(mainwindow);
 _dtTimer.setInterval(metrics.value("desktop/timer"));
 _dtTimer.start();
 
-// Set the desktop
+// Setup the desktop layout
 _desktopWidget = toolbox.createWidget("QWidget", mainwindow, "_desktopWidget");
 _desktopLayout = toolbox.createLayout("QHBoxLayout", mainwindow, "_desktopLayout");
 _desktopMenu = toolbox.loadUi("desktopMenuBar", mainwindow);
@@ -95,7 +95,7 @@ _desktopParent.addToolBar(Qt.LeftToolBarArea, _vToolBar);
 // Initialise Menu Bar items
 setupDesktopMenu();
 
-// Intialize the left toolbar
+// Intialize the left toolbar (as of xtDesktop 4.0.0 no longer visible but the toolbar actions are still used)
 _vToolBar.objectName = "_vToolBar";
 _vToolBar.windowTitle = "Desktop Toolbar";
 _vToolBar.floatable = false;
@@ -132,7 +132,8 @@ _vToolBarActions[0].checked = true;
 
 // Set up browser for Home Page / Dashboard
 var _home =  new QWebView(mainwindow);
-var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappHostname") + "/" + metrics.value("desktop/dashboard");  // Dashboard Url metric
+var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappHostname") +
+               "/" + metrics.value("desktop/dashboard");  // Dashboard Url metric
 _home["loadFinished(bool)"].connect(loadLocalHtml);
 _home["linkClicked(const QUrl &)"].connect(openUrl);
 _home.load(new QUrl(homeURL));
@@ -241,7 +242,7 @@ function addToolBarAction(label, imageName, privilege)
   _vToolBarActions[_vToolBarActions.length] = act;
   _vToolBar["actionTriggered(QAction*)"].connect(toolbarActionTriggered);
 
-  // Add to the Menu list if user has privileges
+  // Add to the Main Menu list if user has privileges
   if (!privilege || privileges.check(privilege))
     var menuItem = new XTreeWidgetItem(_mainMenu, _vToolBarActions.length, _vToolBarActions.length, qsTr(label));
 }
