@@ -205,6 +205,7 @@ This package is an extension for xTuple ERP: PostBooks Edition, a free and open 
   <loadmetasql file="client/metasql/desktop-userShortcuts.mql" />
 
   <createfunction file="database/functions/fetchwelcomehtml.sql"    name="fetchwelcomehtml" />
+  <createfunction file="database/functions/fetchxtupleserverhtml.sql"    name="fetchxtupleserverhtml" />
   <createfunction file="database/functions/usersonline.sql" name="usersonline" />
   <finalscript file="database/misc/setMetrics.sql"  />
   <finalscript file="database/misc/grantPrivileges.sql"  />

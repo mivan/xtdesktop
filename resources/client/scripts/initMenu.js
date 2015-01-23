@@ -100,8 +100,7 @@ _vToolBar.objectName = "_vToolBar";
 _vToolBar.windowTitle = "Desktop Toolbar";
 _vToolBar.floatable = false;
 _vToolBar.movable = false;
-//_vToolBar.visible = true;
-_vToolBar.visible = false;
+_vToolBar.visible = false;  // Turn off left toolbar and replace with menus
 _vToolBar.toolButtonStyle = Qt.ToolButtonTextOnly;
 
 // Initialize Desktop
@@ -132,9 +131,11 @@ _vToolBarActions[0].checked = true;
 
 // Set up browser for Home Page / Dashboard
 var _home =  new QWebView(mainwindow);
-var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappPort") +
-               "/" + metrics.value("desktop/dashboard");  // Dashboard Url metric
-_home["loadFinished(bool)"].connect(loadLocalHtml);
+var db = toolbox.executeQuery("SELECT current_database() AS db;");
+if (db.first())
+  var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappPort") +
+               "/" + db.value("db") + "/npm/xtuple-dashboard-anything/public/index.html";  // Dashboard xTuple Server Url
+_home["loadFinished(bool)"].connect(missingxTupleServer);
 _home["linkClicked(const QUrl &)"].connect(openUrl);
 _home.load(new QUrl(homeURL));
 _home.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;
@@ -264,6 +265,18 @@ function loadLocalHtml(ok)
   _welcome.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;;
 }
 
+function missingxTupleServer(ok)
+{
+  if (!ok)
+  {
+    // xTuple Server is not available or didn't load, so load internal HTML saying we aren't connected
+    var q = toolbox.executeQuery("SELECT xtdesktop.fetchxTupleServerHtml() AS html");
+    q.first();
+    _home.setHtml(q.value("html"));
+  }
+  // We don't want to deal with loading any more web pages.  Let OS do it
+  _home.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;;
+}
 
 /*!
   Launches links clicked on home page into new local browser window

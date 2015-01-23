@@ -23,12 +23,8 @@ function setupDesktopMenu() {
   _shortcutMenu.alternatingRowColors = false;
   _shortcutMenu.maximumHeight = 150;
   _shortcutMenu.addColumn(qsTr("SHORTCUTS"), -1, Qt.AlignLeft, true, "menuShortcuts");
-  var _sc = toolbox.executeDbQuery("desktop", "userShortcuts", new Object);
 
-// Populate shortcuts menu per Treeview item so it matches Main Menu visually
-  while(_sc.next()) {
-    var menuItem = new XTreeWidgetItem(_shortcutMenu, _sc.value("usrpref_id"), _sc.value("usrpref_id"), _sc.value("menuShortcuts"));
-  }
+  shortcutsMenupopulateList();
 
   var _employeeSql = "SELECT 0 as sort, crmacct_name, crmacct_usr_username, emp.emp_image_id "
                 + "FROM emp JOIN crmacct ON (emp_id=crmacct_emp_id) "
@@ -47,8 +43,40 @@ function setupDesktopMenu() {
   _mainMenu["itemClicked(XTreeWidgetItem*, int)"].connect(mainMenuClicked);
   _shortcutMenu["itemClicked(XTreeWidgetItem*, int)"].connect(shortcutMenuClicked);
 
+  // Populate Shortcuts Right Click menu
+  _shortcutMenu["populateMenu(QMenu *,XTreeWidgetItem *, int)"].connect(shortcutsPopulateMenu);
+
 }
 
+function shortcutsMenupopulateList() {
+  _shortcutMenu.clear();
+  var _sc = toolbox.executeDbQuery("desktop", "userShortcuts", new Object);
+
+// Populate shortcuts menu per Treeview item so it matches Main Menu visually
+  while(_sc.next()) {
+    var menuItem = new XTreeWidgetItem(_shortcutMenu, _sc.value("usrpref_id"), _sc.value("usrpref_id"), _sc.value("menuShortcuts"));
+  }
+}
+
+function shortcutsPopulateMenu(pMenu, pItem, pCol){
+  var mCode;
+  var currentItem = _shortcutMenu.currentItem();
+  if(currentItem != null) {
+    mCode = pMenu.addAction(qsTr("Edit Shortcuts..."));
+    mCode.enabled = privileges.check("MaintainPreferencesSelf");
+    mCode.triggered.connect(shortcutsMenuOpenPrefs);
+  }
+}
+
+function shortcutsMenuOpenPrefs() {
+  var hotkeys = toolbox.openWindow("hotkeys", mainwindow, 0, 1);
+  var params = new Object;
+  params.currentUser = true;
+  toolbox.lastWindow().set(params);
+  if (hotkeys.exec() > 0)
+    shortcutsMenupopulateList();
+}
+  
 function mainMenuClicked(wdgt, item) {
   _shortcutMenu.setCurrentItem(-1);
   _desktopStack.currentIndex = (wdgt.id() - 1);
