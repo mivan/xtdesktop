@@ -32,8 +32,8 @@ include("dockUserOnline");
 include("desktopMenuBar");
 
 // ================================================
-// Desktop Stylesheet can be maintained from here 
-var _globalStyle = 'font: 75 bold 10pt "Verdana";\ncolor: rgb(138, 138, 138);\nselection-color: rgb(36, 146, 222);\nbackground-color: rgb(255, 255, 255);';
+// xtDesktop global stylesheet can be maintained from this string 
+var _globalStyle = 'font: 75 bold 10pt "Verdana"; color: rgb(138, 138, 138); selection-color: rgb(36, 146, 222); background-color: rgb(255, 255, 255);';
 // ================================================
 
 var _desktopStack;

@@ -25,7 +25,9 @@ This package is an extension for xTuple ERP: PostBooks Edition, a free and open 
   <prerequisite type="Query"
                 name="Test xTuple ERP version">
     <query>
-      SELECT (fetchMetricText('ServerVersion') >= '4.9.0');
+      SELECT (SUBSTRING(fetchMetricText('ServerVersion') FOR 1) > '4') 
+          OR (SUBSTRING(fetchMetricText('ServerVersion') FOR 1) = '4'
+          AND SUBSTRING(fetchMetricText('ServerVersion') FROM 3 FOR 1)::numeric >= '9');
     </query>
     <message>
       This version of the xtdesktop package only works with xTuple ERP
@@ -143,8 +145,9 @@ This package is an extension for xTuple ERP: PostBooks Edition, a free and open 
   <loadappscript  file="client/scripts/dockSalesOpen.js" name="dockSalesOpen" order="0"/>
   <loadappscript  file="client/scripts/dockSendMessage.js" name="dockSendMessage" order="0"/>
   <loadappscript  file="client/scripts/dockUserOnline.js" name="dockUserOnline" order="0"/>
+  <loadappscript  file="client/scripts/hotkey.js" name="hotkey" order="0"/>
   <loadappscript  file="client/scripts/incident.js" name="incident" order="0"/>
-  <loadappscript  file="client/scripts/initMenu.js" name="initMenu" order="1"/>
+  <loadappscript  file="client/scripts/initMenu.js" name="initMenu" order="0"/>
   <loadappscript  file="client/scripts/preferencesComment.js" name="preferencesComment" order="0"/>
   <loadappscript  file="client/scripts/preferencesHistory.js" name="preferencesHistory" order="0"/>
   <loadappscript  file="client/scripts/preferencesNumber.js" name="preferencesNumber" order="0"/>

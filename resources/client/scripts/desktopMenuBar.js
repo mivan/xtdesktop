@@ -16,7 +16,10 @@ function setupDesktopMenu() {
   _employee = mainwindow.findChild("_employee");
 
   _mainMenu.addColumn(qsTr("MAIN MENU"), -1, Qt.AlignLeft, true, "menuItem");
-  var _style = _globalStyle + '\nselection-color: rgb(36, 146, 222);\nselection-background-color: rgb(255, 255, 255);\nXTreeWidget::branch { border-image: none; };';
+/* ============================================*/
+/*  Left Menu widgets Stylesheet               */
+  var _style = _globalStyle + ' selection-color: rgb(36, 146, 222); selection-background-color: rgb(255, 255, 255); XTreeWidget::branch { border-image: none; };';
+/* ============================================*/
   _mainMenu.setStyleSheet(_style);
   _shortcutMenu.setStyleSheet(_style);
   _mainMenu.alternatingRowColors = false;
@@ -24,7 +27,7 @@ function setupDesktopMenu() {
   _shortcutMenu.maximumHeight = 150;
   _shortcutMenu.addColumn(qsTr("SHORTCUTS"), -1, Qt.AlignLeft, true, "menuShortcuts");
 
-  shortcutsMenupopulateList();
+  shortcutsMenuPopulateList();
 
   var _employeeSql = "SELECT 0 as sort, crmacct_name, crmacct_usr_username, emp.emp_image_id "
                 + "FROM emp JOIN crmacct ON (emp_id=crmacct_emp_id) "
@@ -42,13 +45,19 @@ function setupDesktopMenu() {
 
   _mainMenu["itemClicked(XTreeWidgetItem*, int)"].connect(mainMenuClicked);
   _shortcutMenu["itemClicked(XTreeWidgetItem*, int)"].connect(shortcutMenuClicked);
+  mainwindow["emitSignal(QString, QString)"].connect(refreshShortcuts);
 
   // Populate Shortcuts Right Click menu
   _shortcutMenu["populateMenu(QMenu *,XTreeWidgetItem *, int)"].connect(shortcutsPopulateMenu);
 
 }
 
-function shortcutsMenupopulateList() {
+function refreshShortcuts(source, type) {
+  if (source == "xtdesktop")
+    shortcutsMenuPopulateList();
+}
+
+function shortcutsMenuPopulateList() {
   _shortcutMenu.clear();
   var _sc = toolbox.executeDbQuery("desktop", "userShortcuts", new Object);
 
@@ -74,7 +83,7 @@ function shortcutsMenuOpenPrefs() {
   params.currentUser = true;
   toolbox.lastWindow().set(params);
   if (hotkeys.exec() > 0)
-    shortcutsMenupopulateList();
+    shortcutsMenuPopulateList();
 }
   
 function mainMenuClicked(wdgt, item) {
