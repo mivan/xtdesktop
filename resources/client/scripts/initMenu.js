@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -29,6 +29,12 @@ include("dockSalesHistory");
 include("dockSalesOpen");
 include("dockSendMessage");
 include("dockUserOnline");
+include("desktopMenuBar");
+
+// ================================================
+// xtDesktop global stylesheet can be maintained from this string 
+var _globalStyle = 'font: 75 bold 10pt "Verdana"; color: rgb(138, 138, 138); selection-color: rgb(36, 146, 222); background-color: rgb(255, 255, 255);';
+// ================================================
 
 var _desktopStack;
 var _open = qsTr("Open...");
@@ -37,8 +43,13 @@ var _leftAreaDocks = new Array();
 var _bottomAreaDocks = new Array();
 var _windows = new Array();
 var _hasSavedState = settingsValue("hasSavedState").length > 0;
-var _vToolBar;
+var _vToolBar = new Object;
 var _vToolBarActions = new Array();
+
+var _mainMenu;
+var _shortcuts;
+var _employeeImage;
+var _employee;
 
 var _menuDesktop = new QMenu(qsTr("Desktop"),mainwindow);
 var _menuToolBar = new QMenu(mainwindow);
@@ -56,8 +67,15 @@ _dtTimer = new QTimer(mainwindow);
 _dtTimer.setInterval(metrics.value("desktop/timer"));
 _dtTimer.start();
 
-// Set the desktop
+// Setup the desktop layout
+_desktopWidget = toolbox.createWidget("QWidget", mainwindow, "_desktopWidget");
+_desktopLayout = toolbox.createLayout("QHBoxLayout", mainwindow, "_desktopLayout");
+_desktopMenu = toolbox.loadUi("desktopMenuBar", mainwindow);
+_desktopMenu.maximumWidth = 200;
 _desktopStack = toolbox.createWidget("QStackedWidget", mainwindow, "_desktopStack");
+_desktopLayout.addWidget(_desktopMenu);
+_desktopLayout.addWidget(_desktopStack);
+_desktopWidget.setLayout(_desktopLayout);
 var _desktopParent;
 
 // if this handleNewWindow overload exists then GUIClient is a QMdiArea
@@ -69,23 +87,40 @@ if (mainwindow.showTopLevel())
 
 if (_desktopParent)
 {
-_desktopParent.setCentralWidget(_desktopStack);
+//_desktopParent.setCentralWidget(_desktopStack);
+_desktopParent.setCentralWidget(_desktopWidget);
 _vToolBar = new QToolBar(_desktopParent);
 _desktopParent.addToolBar(Qt.LeftToolBarArea, _vToolBar);
 
-// Intialize the left toolbar
+// Initialise Menu Bar items
+setupDesktopMenu();
+
+// Intialize the left toolbar (as of xtDesktop 4.0.0 no longer visible but the toolbar actions are still used)
 _vToolBar.objectName = "_vToolBar";
 _vToolBar.windowTitle = "Desktop Toolbar";
 _vToolBar.floatable = false;
 _vToolBar.movable = false;
-_vToolBar.visible = true;
-_vToolBar.toolButtonStyle = Qt.ToolButtonTextUnderIcon;
+_vToolBar.visible = false;  // Turn off left toolbar and replace with menus
+_vToolBar.toolButtonStyle = Qt.ToolButtonTextOnly;
 
 // Initialize Desktop
-// Set up browser for home Page
+// Set up browser for Welcome Page
 var _welcome = new QWebView(mainwindow);
-var url = new QUrl(metrics.value("desktop/welcome"));
+var firstURL = metrics.value("desktop/welcome");
+var databaseURL = mainwindow.databaseURL();
+var string =  databaseURL.split("/");
+var databaseName = string[3];
+var hostName = string[2].substring(0, string[2].indexOf(":"))
+var serverVersion = metrics.value("ServerVersion");
+var application = metrics.value("Application");
+var secondURL = firstURL + 
+"?client=desktop" + 
+"&hostname=" + hostName +  
+"&organization=" + databaseName +
+"&edition=" + application + 
+"&version=" + serverVersion;
 _welcome.objectName = "_welcome";
+var url = new QUrl(secondURL);
 _welcome["loadFinished(bool)"].connect(loadLocalHtml);
 _welcome["linkClicked(const QUrl &)"].connect(openUrl);
 _welcome.load(url);
@@ -93,6 +128,19 @@ _welcome.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;
 _desktopStack.addWidget(_welcome);
 addToolBarAction(qsTr("Welcome"), "home_32");
 _vToolBarActions[0].checked = true;
+
+// Set up browser for Home Page / Dashboard
+var _home =  new QWebView(mainwindow);
+var db = toolbox.executeQuery("SELECT current_database() AS db;");
+if (db.first())
+  var homeURL = "https://" + metrics.value("WebappHostname") + ":" + metrics.value("WebappPort") +
+               "/" + db.value("db") + "/npm/xtuple-dashboard-anything/public/index.html";  // Dashboard xTuple Server Url
+_home["loadFinished(bool)"].connect(missingxTupleServer);
+_home["linkClicked(const QUrl &)"].connect(openUrl);
+_home.load(new QUrl(homeURL));
+_home.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;
+_desktopStack.addWidget(_home);
+addToolBarAction(qsTr("Dashboard"), "home_32");
 
 // Initialize additional desktop UIs and Dock Widgets
 // (Init functions come from the code pulled in by the include statements)
@@ -105,6 +153,7 @@ addDesktop("desktopSales", "reward_32", "ViewSalesDesktop");
 initDockSalesAct();
 initDockSalesHist();
 initDockSalesOpen();
+
 addDesktop("desktopAccounting", "accounting_32", "ViewAccountingDesktop");
 initDockPayables();
 initDockReceivables();
@@ -162,11 +211,12 @@ function addDesktop(uiName, imageName, privilege)
 {
   // Get the UI and add to desktop stack
   var desktop = toolbox.loadUi(uiName);
+  desktop.setStyleSheet(_globalStyle);
   _desktopStack.addWidget(desktop);
   _windows[_windows.length] = desktop;
   addToolBarAction(desktop.windowTitle, imageName, privilege);
   desktop.restoreState();
-
+  
   return desktop;
 }
 
@@ -192,6 +242,10 @@ function addToolBarAction(label, imageName, privilege)
   _vToolBar.addAction(act);
   _vToolBarActions[_vToolBarActions.length] = act;
   _vToolBar["actionTriggered(QAction*)"].connect(toolbarActionTriggered);
+
+  // Add to the Main Menu list if user has privileges
+  if (!privilege || privileges.check(privilege))
+    var menuItem = new XTreeWidgetItem(_mainMenu, _vToolBarActions.length, _vToolBarActions.length, qsTr(label));
 }
 
 /*!
@@ -211,6 +265,18 @@ function loadLocalHtml(ok)
   _welcome.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;;
 }
 
+function missingxTupleServer(ok)
+{
+  if (!ok)
+  {
+    // xTuple Server is not available or didn't load, so load internal HTML saying we aren't connected
+    var q = toolbox.executeQuery("SELECT xtdesktop.fetchxTupleServerHtml() AS html");
+    q.first();
+    _home.setHtml(q.value("html"));
+  }
+  // We don't want to deal with loading any more web pages.  Let OS do it
+  _home.page().linkDelegationPolicy = QWebPage.DelegateAllLinks;;
+}
 
 /*!
   Launches links clicked on home page into new local browser window
@@ -293,5 +359,3 @@ function currencyConversions()
 {
   openSetup("currencyConversions");
 }
-
-

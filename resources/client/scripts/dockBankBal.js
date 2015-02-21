@@ -1,7 +1,7 @@
 /*
  * This file is part of the xTuple ERP: PostBooks Edition, a free and
  * open source Enterprise Resource Planning software suite,
- * Copyright (c) 1999-2012 by OpenMFG LLC, d/b/a xTuple.
+ * Copyright (c) 1999-2015 by OpenMFG LLC, d/b/a xTuple.
  * It is licensed to you under the Common Public Attribution License
  * version 1.0, the full text of which (including xTuple-specific Exhibits)
  * is available at www.xtuple.com/CPAL.  By using this software, you agree
@@ -65,7 +65,11 @@ function fillListBankBal()
 
   if (_dockBankBal.visible && _bankBalIsDirty)
   {
-    _bankBal.populate(toolbox.executeDbQuery("desktop","bankBal"));
+    var params = new Object;
+    if (metrics.boolean("EnableProjectAccounting"))
+      params.projectAccounting = true;
+    var qry = toolbox.executeDbQuery("desktop","bankBal", params);
+    _bankBal.populate(qry);
     _bankBalIsDirty = false;
   }
 }
